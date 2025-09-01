@@ -7,137 +7,198 @@ var service = new DeckService(repository);
 
 while (true)
 {
-    Console.WriteLine("\n=== MyDeck ===");
-    Console.WriteLine("1) Crea deck");
-    Console.WriteLine("2) Lista deck");
-    Console.WriteLine("3) Rinomina deck");
-    Console.WriteLine("4) Elimina deck");
-    Console.WriteLine("5) Aggiungi carta a un deck");
-    Console.WriteLine("6) Rimuovi carta da un deck");
-    Console.WriteLine("7) Dettagli deck");
-    Console.WriteLine("0) Esci");
+    Console.Clear();
+    Console.WriteLine("=== MY DECK MANAGER ===");
+    Console.WriteLine("1. Visualizza tutti i deck");
+    Console.WriteLine("2. Crea nuovo deck");
+    Console.WriteLine("3. Seleziona deck");
+    Console.WriteLine("0. Esci");
     Console.Write("Scelta: ");
     var choice = Console.ReadLine();
 
-    try
+    switch (choice)
     {
+        case "1":
+            var decks = service.GetAllDecks();
+            if (!decks.Any())
+            {
+                Console.WriteLine("Nessun deck presente.");
+            }
+            else
+            {
+                foreach (var d in decks)
+                    Console.WriteLine($"- {d.Name} (Id: {d.Id})");
+            }
+            Console.WriteLine("Premi un tasto per continuare...");
+            Console.ReadKey();
+            break;
+
+        case "2":
+            Console.Write("Nome del nuovo deck: ");
+            var name = Console.ReadLine() ?? "Deck senza nome";
+            var newDeck = service.CreateDeck(name);
+            Console.WriteLine($"Deck '{newDeck.Name}' creato con Id {newDeck.Id}");
+            Console.ReadKey();
+            break;
+
+        case "3":
+            Console.Write("Inserisci Id del deck: ");
+            if (Guid.TryParse(Console.ReadLine(), out var deckId))
+            {
+                var deck = service.GetDeck(deckId);
+                if (deck == null)
+                {
+                    Console.WriteLine("Deck non trovato!");
+                    Console.ReadKey();
+                    break;
+                }
+
+                ManageDeck(deck, service);
+            }
+            else
+            {
+                Console.WriteLine("Id non valido!");
+                Console.ReadKey();
+            }
+            break;
+
+        case "0":
+            return;
+        default:
+            Console.WriteLine("Scelta non valida!");
+            Console.ReadKey();
+            break;
+    }
+}
+
+void ManageDeck(Deck deck, DeckService service)
+{
+    while (true)
+    {
+        Console.Clear();
+        Console.WriteLine($"=== DECK: {deck.Name} ===");
+        Console.WriteLine("Carte:");
+        if (!deck.Cards.Any())
+        {
+            Console.WriteLine("  Nessuna carta");
+        }
+        else
+        {
+            foreach (var dc in deck.Cards)
+                Console.WriteLine($"  {dc.Quantity}x {dc.Card.Name} [{dc.Card.Type}, {dc.Card.ManaCost}]");
+        }
+
+        Console.WriteLine("\nOpzioni:");
+        Console.WriteLine("1. Aggiungi carta");
+        Console.WriteLine("2. Rimuovi carta");
+        Console.WriteLine("3. Rinomina deck");
+        Console.WriteLine("4. Visualizza curva di mana");
+        Console.WriteLine("5. Torna al menu principale");
+        Console.Write("Scelta: ");
+        var choice = Console.ReadLine();
+
         switch (choice)
         {
             case "1":
-                Console.Write("Nome nuovo deck: ");
-                var name = Console.ReadLine() ?? "";
-                var created = service.CreateDeck(name);
-                Console.WriteLine($"Creato deck '{created.Name}' con Id {created.Id}");
+                Console.Write("Nome carta: ");
+                var cardName = Console.ReadLine() ?? "";
+                Console.Write("Tipo carta: ");
+                var cardType = Console.ReadLine() ?? "";
+                Console.Write("Costo mana (es: 1R): ");
+                var mana = Console.ReadLine() ?? "";
+                Console.Write("Quantità: ");
+                var qtyInput = Console.ReadLine();
+                int qty = int.TryParse(qtyInput, out var q) ? q : 1;
+
+                var card = new Card { Name = cardName, Type = cardType, ManaCost = mana };
+                try
+                {
+                    service.AddCard(deck.Id, card, qty);
+                    deck = service.GetDeck(deck.Id)!;
+                    Console.WriteLine("Carta aggiunta!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Errore: {ex.Message}");
+                }
+                Console.ReadKey();
                 break;
 
             case "2":
-                ShowDecks(service);
+                Console.Write("Nome carta da rimuovere: ");
+                var removeName = Console.ReadLine() ?? "";
+                Console.Write("Quantità da rimuovere (lascia vuoto per rimuovere tutte): ");
+                var qtyRemoveInput = Console.ReadLine();
+                int qtyRemove = int.TryParse(qtyRemoveInput, out var qr) ? qr : int.MaxValue;
+
+                service.RemoveCard(deck.Id, removeName, qtyRemove);
+                deck = service.GetDeck(deck.Id)!;
+                Console.WriteLine("Operazione completata!");
+                Console.ReadKey();
                 break;
 
             case "3":
-                {
-                    var id = SelectDeck(service);
-                    if (id == Guid.Empty) break;
-                    Console.Write("Nuovo nome: ");
-                    var newName = Console.ReadLine() ?? "";
-                    service.RenameDeck(id, newName);
-                    Console.WriteLine("Deck rinominato.");
-                    break;
-                }
+                Console.Write("Nuovo nome deck: ");
+                var newName = Console.ReadLine() ?? deck.Name;
+                service.RenameDeck(deck.Id, newName);
+                deck = service.GetDeck(deck.Id)!;
+                Console.WriteLine("Deck rinominato!");
+                Console.ReadKey();
+                break;
 
             case "4":
-                {
-                    var id = SelectDeck(service);
-                    if (id == Guid.Empty) break;
-                    service.DeleteDeck(id);
-                    Console.WriteLine("Deck eliminato.");
-                    break;
-                }
+                DisplayManaCurve(deck);
+                Console.WriteLine("Premi un tasto per continuare...");
+                Console.ReadKey();
+                break;
 
             case "5":
-                {
-                    var id = SelectDeck(service);
-                    if (id == Guid.Empty) break;
-
-                    Console.Write("Nome carta: ");
-                    var cardName = Console.ReadLine() ?? "";
-                    Console.Write("Costo mana (es. R, 1U, 2GG): ");
-                    var mana = Console.ReadLine() ?? "";
-                    Console.Write("Tipo (es. Creature, Instant): ");
-                    var type = Console.ReadLine() ?? "";
-
-                    service.AddCard(id, new Card { Name = cardName, ManaCost = mana, Type = type });
-                    Console.WriteLine("Carta aggiunta.");
-                    break;
-                }
-
-            case "6":
-                {
-                    var id = SelectDeck(service);
-                    if (id == Guid.Empty) break;
-
-                    Console.Write("Nome carta da rimuovere: ");
-                    var removeName = Console.ReadLine() ?? "";
-                    service.RemoveCard(id, removeName);
-                    Console.WriteLine("Carte rimosse (tutte le occorrenze con quel nome).");
-                    break;
-                }
-
-            case "7":
-                {
-                    var id = SelectDeck(service);
-                    if (id == Guid.Empty) break;
-
-                    var deck = service.GetDeck(id)!;
-                    Console.WriteLine($"\nDeck: {deck.Name}  (Id: {deck.Id})");
-                    if (deck.Cards.Count == 0) Console.WriteLine(" - Nessuna carta");
-                    foreach (var c in deck.Cards)
-                        Console.WriteLine($" - {c.Name} [{c.ManaCost}] {c.Type}");
-                    break;
-                }
-
-            case "0":
                 return;
-
             default:
-                Console.WriteLine("Scelta non valida.");
+                Console.WriteLine("Scelta non valida!");
+                Console.ReadKey();
                 break;
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Errore: {ex.Message}");
-    }
 }
 
-static void ShowDecks(DeckService service)
+void DisplayManaCurve(Deck deck)
 {
-    var decks = service.GetAllDecks();
-    if (decks.Count == 0)
+    Console.WriteLine("\n=== CURVA DI MANA ===");
+    var curve = new Dictionary<int, int>();
+
+    foreach (var dc in deck.Cards)
     {
-        Console.WriteLine("Nessun deck.");
-        return;
+        int cost = ParseManaCost(dc.Card.ManaCost);
+        if (!curve.ContainsKey(cost)) curve[cost] = 0;
+        curve[cost] += dc.Quantity;
     }
 
-    Console.WriteLine("\n-- Deck esistenti --");
-    for (int i = 0; i < decks.Count; i++)
-        Console.WriteLine($"{i + 1}) {decks[i].Name}  (Carte: {decks[i].Cards.Count}, Id: {decks[i].Id})");
+    foreach (var kvp in curve.OrderBy(k => k.Key))
+        Console.WriteLine($"Costo {kvp.Key}: {kvp.Value} carte");
 }
 
-static Guid SelectDeck(DeckService service)
+int ParseManaCost(string manaCost)
 {
-    var decks = service.GetAllDecks();
-    if (decks.Count == 0)
+    // Conteggio semplice: somma numeri nel costo mana, ignora simboli colore
+    int total = 0;
+    var numStr = "";
+    foreach (var c in manaCost)
     {
-        Console.WriteLine("Nessun deck da selezionare.");
-        return Guid.Empty;
+        if (char.IsDigit(c))
+        {
+            numStr += c;
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(numStr))
+            {
+                total += int.Parse(numStr);
+                numStr = "";
+            }
+            total += 1; // simboli colore contano 1
+        }
     }
-
-    ShowDecks(service);
-    Console.Write("Seleziona numero deck: ");
-    if (int.TryParse(Console.ReadLine(), out var n) && n >= 1 && n <= decks.Count)
-        return decks[n - 1].Id;
-
-    Console.WriteLine("Selezione non valida.");
-    return Guid.Empty;
+    if (!string.IsNullOrEmpty(numStr)) total += int.Parse(numStr);
+    return total;
 }
