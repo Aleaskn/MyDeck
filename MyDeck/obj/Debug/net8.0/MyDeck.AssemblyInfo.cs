@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MyDeck")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2598d905522788c02535211afc1c61e5e05e62a")]
 [assembly: System.Reflection.AssemblyProductAttribute("MyDeck")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MyDeck")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
