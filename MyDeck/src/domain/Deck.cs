@@ -2,6 +2,7 @@ namespace MyDeck.Domain;
 
 public class Deck
 {
+    public Guid Id { get; set; } = Guid.NewGuid(); // identificatore unico
     public string Name { get; set; } = "";
     public List<Card> Cards { get; set; } = new();
 

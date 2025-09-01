@@ -12,3 +12,4 @@
 /Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.pdb
 /Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.genruntimeconfig.cache
 /Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/ref/MyDeck.dll
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.sourcelink.json
