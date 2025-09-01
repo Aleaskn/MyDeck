@@ -1,0 +1,14 @@
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/bin/Debug/net8.0/MyDeck
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/bin/Debug/net8.0/MyDeck.deps.json
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/bin/Debug/net8.0/MyDeck.runtimeconfig.json
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/bin/Debug/net8.0/MyDeck.dll
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/bin/Debug/net8.0/MyDeck.pdb
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.GeneratedMSBuildEditorConfig.editorconfig
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.AssemblyInfoInputs.cache
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.AssemblyInfo.cs
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.csproj.CoreCompileInputs.cache
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.dll
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/refint/MyDeck.dll
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.pdb
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/MyDeck.genruntimeconfig.cache
+/Users/alessandro/Documents/PROGETTINI/MyDeck/MyDeck/obj/Debug/net8.0/ref/MyDeck.dll
