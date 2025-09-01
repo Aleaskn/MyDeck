@@ -1,0 +1,47 @@
+# Build output
+bin/
+obj/
+[Bb]uild/
+[Ll]ogs/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# MacOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Recycle Bin
+.Trashes
+
+# IDE specific
+.idea/
+*.user
+*.userprefs
+*.suo
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Dotnet tools
+*.dotnet/
+.dotnet/
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+
+# Others
+*.swp
+*.swo
+*.tmp
