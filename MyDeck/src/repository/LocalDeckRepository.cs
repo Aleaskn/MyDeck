@@ -16,6 +16,8 @@ public class LocalDeckRepository : IDeckRepository
     public List<Deck> GetAllDecks()
     {
         var json = File.ReadAllText(_filePath);
+        if (string.IsNullOrWhiteSpace(json)) return new List<Deck>();
+
         return JsonSerializer.Deserialize<List<Deck>>(json) ?? new List<Deck>();
     }
 
@@ -27,6 +29,7 @@ public class LocalDeckRepository : IDeckRepository
     public void SaveDeck(Deck deck)
     {
         var decks = GetAllDecks();
+        // rimuove eventuale deck con stesso Id
         decks.RemoveAll(d => d.Id == deck.Id);
         decks.Add(deck);
         File.WriteAllText(_filePath, JsonSerializer.Serialize(decks, new JsonSerializerOptions { WriteIndented = true }));

@@ -4,19 +4,13 @@ public class Deck
 {
     public Guid Id { get; set; } = Guid.NewGuid(); // identificatore unico
     public string Name { get; set; } = "";
-    public List<Card> Cards { get; set; } = new();
+    public List<DeckCard> Cards { get; set; } = new();
 
-    public void AddCard(Card card)
-    {
-        Cards.Add(card);
-    }
+    public DeckFormat Format { get; set; } = DeckFormat.Standard;
+    public List<DeckCard> Sideboard { get; set; } = new();
 
-    public void ShowDeck()
-    {
-        Console.WriteLine($"Deck: {Name} ({Cards.Count} carte)");
-        foreach (var card in Cards)
-        {
-            Console.WriteLine($"- {card.Name} [{card.ManaCost}] {card.Type}");
-        }
-    }
+    // Proprietà calcolate per ottenere facilmente il numero totale di carte
+    public int TotalMainDeckCards => Cards.Sum(dc => dc.Quantity);
+    public int TotalSideboardCards => Sideboard.Sum(dc => dc.Quantity);
+
 }
