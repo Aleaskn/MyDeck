@@ -1,5 +1,6 @@
 using MyDeck.Domain;
 using MyDeck.Repositories;
+using System.Text;
 
 namespace MyDeck.Services;
 
@@ -12,37 +13,42 @@ public class DeckService
         _repository = repository;
     }
 
-    public Deck CreateDeck(string name)
+    public Deck CreateDeck(string name, DeckFormat format)
     {
-        var deck = new Deck { Name = name };
+        var deck = new Deck { Name = name, Format = format };
         _repository.SaveDeck(deck);
         return deck; // ritorniamo il deck per ottenere l'Id
     }
 
-    public void AddCard(Guid deckId, Card card, int quantity = 1)
+    // Metodo per aggiungere una carta al main deck e nella sidebord se presente
+    // Controllo per la quantità delle carte 
+    public void AddCard(Guid deckId, Card card, int quantity = 1, bool toSideboard = false)
     {
         var deck = _repository.GetDeck(deckId) ?? throw new Exception("Deck non trovato!");
 
-        var existing = deck.Cards.FirstOrDefault(c => 
+        // Controlla il limite delle 4 copie tra main deck & sideboard
+        var totalQuantityInDeck = GetCardCount(deck, card.Name);
+        var isBasicLand = card.Type.Contains("Basic Land", StringComparison.OrdinalIgnoreCase);
+
+        if (!isBasicLand && totalQuantityInDeck + quantity > 4)
+            throw new Exception("Non puoi avere più di 4 copie di una carta (tranne le terre base) tra mazzo e sideboard.");
+
+        var targetList = toSideboard ? deck.Sideboard : deck.Cards;
+
+        // Controllo limite sideboard
+        if (toSideboard && deck.TotalSideboardCards + quantity > 15)
+            throw new Exception("Il sideboard non può contenere più di 15 carte.");
+
+        var existing = targetList.FirstOrDefault(c =>
             c.Card.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase));
 
         if (existing != null)
         {
-            // Gestione limite 4 copie, tranne terre base
-            var isBasicLand = card.Type.Contains("Basic Land", StringComparison.OrdinalIgnoreCase);
-            var newQuantity = existing.Quantity + quantity;
-
-            if (!isBasicLand && newQuantity > 4)
-                throw new Exception("Non puoi avere più di 4 copie di questa carta (tranne le terre base).");
-
-            existing.Quantity = newQuantity;
+            existing.Quantity += quantity;
         }
         else
         {
-            if (quantity > 4 && !card.Type.Contains("Basic Land", StringComparison.OrdinalIgnoreCase))
-                throw new Exception("Non puoi aggiungere più di 4 copie di questa carta.");
-            
-            deck.Cards.Add(new DeckCard { Card = card, Quantity = quantity });
+            targetList.Add(new DeckCard { Card = card, Quantity = quantity });
         }
 
         _repository.SaveDeck(deck);
@@ -65,16 +71,16 @@ public class DeckService
         _repository.SaveDeck(deck);
     }
 
-    public void RemoveCard(Guid deckId, string cardName, int quantity = int.MaxValue)
+    public void RemoveCard(Guid deckId, string cardName, int quantity, bool fromSideboard = false)
     {
         var deck = _repository.GetDeck(deckId) ?? throw new Exception("Deck non trovato!");
-        var existing = deck.Cards.FirstOrDefault(dc =>
-            dc.Card.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+        var targetList = fromSideboard ? deck.Sideboard : deck.Cards;
 
+        var existing = targetList.FirstOrDefault(dc => dc.Card.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
         if (existing == null) return;
 
         if (quantity >= existing.Quantity)
-            deck.Cards.RemoveAll(dc => dc.Card.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+            targetList.Remove(existing);
         else
             existing.Quantity -= quantity;
 
@@ -90,7 +96,10 @@ public class DeckService
 
         foreach (var dc in deck.Cards)
         {
-            int cmc = CalculateCmc(dc.Card.ManaCost);
+            // Non includiamo le terre nella curva di mana
+            if (dc.Card.Type.Contains("Land", StringComparison.OrdinalIgnoreCase)) continue;
+
+            int cmc = GetConvertedManaCost(dc.Card.ManaCost);
             if (!curve.ContainsKey(cmc)) curve[cmc] = 0;
             curve[cmc] += dc.Quantity;
         }
@@ -98,10 +107,11 @@ public class DeckService
         return curve;
     }
 
-    // Metodo semplificato per costo mana convertito
-    private int CalculateCmc(string manaCost)
+    // Metodo per calcolare il CMC
+    public int GetConvertedManaCost(string manaCost)
     {
-        // Esempi: "1U" => 2, "2GG" => 4, "R" => 1
+        if (string.IsNullOrWhiteSpace(manaCost)) return 0;
+        
         int total = 0;
         string num = "";
 
@@ -111,21 +121,85 @@ public class DeckService
             {
                 num += c;
             }
-            else
+            // Ignora simboli non alfanumerici come '(', ')', '/'
+            else if (char.IsLetterOrDigit(c))
             {
                 if (num != "")
                 {
                     total += int.Parse(num);
                     num = "";
                 }
-                total += 1; // ogni simbolo di mana singolo vale 1
+                // Simboli come 'X' contano 0 nel CMC, gli altri 1
+                if (c != 'X')
+                {
+                    total += 1;
+                }
             }
         }
-
         if (num != "") total += int.Parse(num);
         return total;
     }
-    
+
+    // Metodo per validare un deck secondo le regole per il formato scelto 
+        public List<string> ValidateDeck(Deck deck)
+    {
+        var warnings = new List<string>();
+        int minDeckSize = 0;
+
+        switch (deck.Format)
+        {
+            case DeckFormat.Standard:
+                minDeckSize = 60;
+                break;
+            case DeckFormat.Commander:
+                minDeckSize = 100; // 99 + 1 commander, ma per ora controlliamo 100 totali
+                break;
+        }
+
+        if (deck.TotalMainDeckCards < minDeckSize)
+            warnings.Add($"Il mazzo principale ha {deck.TotalMainDeckCards}/{minDeckSize} carte (minimo richiesto).");
+
+        if (deck.TotalSideboardCards > 15)
+            warnings.Add($"Il sideboard ha {deck.TotalSideboardCards}/15 carte (massimo consentito).");
+
+        return warnings;
+    }
+
+    // Logica per l'export del deck in formato testo
+        public string ExportDeckToString(Guid deckId)
+    {
+        var deck = GetDeck(deckId) ?? throw new Exception("Deck non trovato!");
+        var builder = new StringBuilder();
+        
+        builder.AppendLine($"// Deck: {deck.Name}");
+        builder.AppendLine($"// Format: {deck.Format}");
+        builder.AppendLine();
+
+        foreach (var dc in deck.Cards.OrderBy(c => c.Card.Name))
+        {
+            builder.AppendLine($"{dc.Quantity} {dc.Card.Name}");
+        }
+
+        if (deck.Sideboard.Any())
+        {
+            builder.AppendLine();
+            builder.AppendLine("Sideboard");
+            foreach (var dc in deck.Sideboard.OrderBy(c => c.Card.Name))
+            {
+                builder.AppendLine($"{dc.Quantity} {dc.Card.Name}");
+            }
+        }
+        return builder.ToString();
+    }
+
+    // Metodo helper per contare le copie di una carta tra mazzo e sideboard
+    private int GetCardCount(Deck deck, string cardName)
+    {
+        var mainCount = deck.Cards.FirstOrDefault(c => c.Card.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase))?.Quantity ?? 0;
+        var sideCount = deck.Sideboard.FirstOrDefault(c => c.Card.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase))?.Quantity ?? 0;
+        return mainCount + sideCount;
+    }
+
     public List<Deck> GetAllDecks() => _repository.GetAllDecks();
 
     public void DeleteDeck(Guid id) => _repository.DeleteDeck(id);
